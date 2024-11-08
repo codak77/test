@@ -1,0 +1,17 @@
+name: Simple Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Print something
+        run: |
+          echo "Hello, world!"
