@@ -49,9 +49,9 @@ def calculate_eol_packages():
     # Initialize Port API client
     # Replace these with your actual Port API credentials
     load_dotenv()
-    api_key = os.getenv("PORT_API_KEY")
+
     PORT_API_URL = "https://api.getport.io"
-    PORT_API_TOKEN = api_key
+    PORT_API_TOKEN = os.getenv("PORT_API_KEY")
     
     client = PortAPIClient(PORT_API_URL, PORT_API_TOKEN)
 
