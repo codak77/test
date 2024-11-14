@@ -11,6 +11,7 @@ class PortAPIClient:
             'Authorization': f'Bearer {api_token}',
             'Content-Type': 'application/json'
         }
+        # print(f"Bearer {api_token}")
 
     def get_services(self) -> List[Dict]:
         """Fetch all service entities from Port"""
@@ -51,7 +52,8 @@ def calculate_eol_packages():
     load_dotenv()
 
     PORT_API_URL = "https://api.getport.io"
-    PORT_API_TOKEN = os.getenv("PORT_API_KEY")
+    PORT_API_TOKEN = os.getenv("PORT_KEY")
+
     
     client = PortAPIClient(PORT_API_URL, PORT_API_TOKEN)
 
@@ -69,7 +71,7 @@ def calculate_eol_packages():
         # Process each service
         for service in services:
             # Get the frameworks related to this service
-            service_frameworks = service.get('relations', {}).get('framework', [])
+            service_frameworks = service['relations']['used_frameworks']
             
             # Count EOL frameworks
             eol_count = sum(
