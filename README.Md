@@ -39,7 +39,9 @@ pip install requests
 
 Before running the application, you need to set up your Port API credentials:
 
-Create a .env file and set `PORT_KEY` with your actual Port API token
+Create a .env file and set: 
+1. `PORT_CLIENT_ID` with your actual Port client ID 
+2. `PORT_CLIENT_SECRET` with your actual Port client secret 
 
 ## Usage
 
