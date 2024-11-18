@@ -1,0 +1,59 @@
+name: Update PR Count in Port
+
+on:
+  pull_request:
+    types: [opened, closed, reopened]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch: # Manual trigger for testing
+  schedule:
+    - cron: '*/30 * * * *' # Runs every 30 minutes as a fallback
+
+jobs:
+  update-pr-count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Open PR Count
+        id: pr-count
+        run: |
+          PR_COUNT=$(gh api graphql -f query='
+            query($owner:String!, $repo:String!) {
+              repository(owner:$owner, name:$repo) {
+                pullRequests(states:OPEN) {
+                  totalCount
+                }
+              }
+            }' -f owner=${{ github.repository_owner }} -f repo=${{ github.event.repository.name }} --jq '.data.repository.pullRequests.totalCount')
+          echo "count=$PR_COUNT" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Port Access Token
+        id: get-port-token
+        run: |
+          PORT_TOKEN=$(curl -X POST "https://api.getport.io/v1/auth/access_token" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "clientId": "${{ secrets.PORT_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.PORT_CLIENT_SECRET }}"
+            }' | jq -r '.accessToken')
+          echo "token=$PORT_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Update Port Entity
+        run: |
+          # Get the repository name for the entity identifier
+          REPO_NAME="${{ github.event.repository.name }}"
+          
+          # Update the entity in Port
+          curl -X PATCH "https://api.getport.io/v1/blueprints/service/entities/$REPO_NAME" \
+            -H "Authorization: Bearer ${{ steps.get-port-token.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "properties": {
+                "open_pr_count": ${{ steps.pr-count.outputs.count }}
+              }
+            }'
+
+      - name: Log Update Result
+        run: |
+          echo "Updated PR count to ${{ steps.pr-count.outputs.count }} for repository ${{ github.event.repository.name }}"

@@ -5,15 +5,38 @@ from dotenv import load_dotenv
 import os
 
 class PortAPIClient:
-    def __init__(self, base_url: str, api_token: str):
+    def __init__(self, base_url: str, client_id: str, client_secret: str):
         self.base_url = base_url
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token = None
         self.headers = {
-            'Authorization': f'Bearer {api_token}',
             'Content-Type': 'application/json'
         }
 
+    def get_access_token(self) -> str:
+        """Fetch access token using client credentials"""
+        auth_url = f"{self.base_url}/v1/auth/access_token"
+        payload = {
+            "clientId": self.client_id,
+            "clientSecret": self.client_secret
+        }
+        
+        response = requests.post(auth_url, json=payload)
+        response.raise_for_status()
+        
+        self.token = response.json()['accessToken']
+        self.headers['Authorization'] = f'Bearer {self.token}'
+        return self.token
+
+    def _ensure_valid_token(self):
+        """Ensure we have a valid token before making requests"""
+        if not self.token:
+            self.get_access_token()
+
     def get_services(self) -> List[Dict]:
         """Fetch all service entities from Port"""
+        self._ensure_valid_token()
         response = requests.get(
             f'{self.base_url}/v1/blueprints/service/entities',
             headers=self.headers
@@ -23,6 +46,7 @@ class PortAPIClient:
 
     def get_frameworks(self) -> List[Dict]:
         """Fetch all framework entities from Port"""
+        self._ensure_valid_token()
         response = requests.get(
             f'{self.base_url}/v1/blueprints/framework/entities',
             headers=self.headers
@@ -32,6 +56,7 @@ class PortAPIClient:
 
     def update_service_eol_count(self, service_id: str, eol_count: int):
         """Update the EOL package count for a service"""
+        self._ensure_valid_token()
         payload = {
             "properties": {
                 "number_of_eol_packages": eol_count
@@ -47,13 +72,13 @@ class PortAPIClient:
 
 def calculate_eol_packages():
     # Initialize Port API client
-    # Replace these with your actual Port API credentials
     load_dotenv()
 
     PORT_API_URL = "https://api.getport.io"
-    PORT_API_TOKEN = os.getenv("PORT_API_KEY")
-    
-    client = PortAPIClient(PORT_API_URL, PORT_API_TOKEN)
+    PORT_CLIENT_ID = os.getenv("PORT_CLIENT_ID")
+    PORT_CLIENT_SECRET = os.getenv("PORT_CLIENT_SECRET")
+
+    client = PortAPIClient(PORT_API_URL, PORT_CLIENT_ID, PORT_CLIENT_SECRET) 
 
     try:
         # Get all services and frameworks
@@ -69,7 +94,7 @@ def calculate_eol_packages():
         # Process each service
         for service in services:
             # Get the frameworks related to this service
-            service_frameworks = service.get('relations', {}).get('framework', [])
+            service_frameworks = service['relations']['used_frameworks']
             
             # Count EOL frameworks
             eol_count = sum(
