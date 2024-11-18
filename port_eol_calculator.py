@@ -78,7 +78,7 @@ def calculate_eol_packages():
     PORT_CLIENT_ID = os.getenv("PORT_CLIENT_ID")
     PORT_CLIENT_SECRET = os.getenv("PORT_CLIENT_SECRET")
 
-    client = PortAPIClient(PORT_API_URL, PORT_CLIENT_ID, PORT_CLIENT_SECRET)
+    client = PortAPIClient(PORT_API_URL, PORT_CLIENT_ID, PORT_CLIENT_SECRET) 
 
     try:
         # Get all services and frameworks
